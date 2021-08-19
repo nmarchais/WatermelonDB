@@ -1,6 +1,6 @@
 // @flow
 
-import { mapObj, values, unnest } from '../../utils/fp'
+import { mapObj, unnest } from '../../utils/fp'
 import areRecordsEqual from '../../utils/fp/areRecordsEqual'
 import allPromisesObj from '../../utils/fp/allPromisesObj'
 import { logError } from '../../utils/common'
@@ -9,9 +9,9 @@ import type { Database, Model } from '../..'
 import { prepareMarkAsSynced } from './helpers'
 import type { SyncLocalChanges } from '../index'
 
-const unchangedRecordsForRaws = (raws, recordCache) =>
+const unchangedRecordsForRaws = (table, raws, recordCache) =>
   raws.reduce((records, raw) => {
-    const record = recordCache.find((model) => model.id === raw.id)
+    const record = recordCache.find((model) => model.id === raw.id && table === model.table)
     if (!record) {
       logError(
         `[Sync] Looking for record ${raw.id} to mark it as synced, but I can't find it. Will ignore it (it should get synced next time). This is probably a Watermelon bug — please file an issue!`,
@@ -24,13 +24,12 @@ const unchangedRecordsForRaws = (raws, recordCache) =>
   }, [])
 
 const recordsToMarkAsSynced = ({ changes, affectedRecords }: SyncLocalChanges): Model[] => {
-  // $FlowFixMe
-  const changesTables = values(changes)
+  const tableNames = Object.keys(changes)
   return unnest(
-    // $FlowFixMe
-    changesTables.map(({ created, updated }) =>
-      unchangedRecordsForRaws(created.concat(updated), affectedRecords),
-    ),
+      tableNames.map(tableName => {
+          const changeValues = changes[tableName]
+          return unchangedRecordsForRaws(tableName, changeValues.created.concat(changeValues.updated), affectedRecords)
+      }),
   )
 }
 

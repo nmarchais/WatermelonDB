@@ -88,7 +88,7 @@ export default class Model {
   // After preparing an update, you must execute it synchronously using
   // database.batch()
   prepareUpdate(recordUpdater: (this) => void = noop): this {
-    invariant(!this._preparedState, `Cannot update a record with pending changes`)
+    invariant(!this._preparedState, `Cannot update a record with pending changes: ` + this._raw.id + ", TableName: " + this.constructor.table +", this._preparedState: " + this._preparedState)
     this._isEditing = true
 
     // Touch updatedAt (if available)
@@ -122,14 +122,14 @@ export default class Model {
   }
 
   prepareMarkAsDeleted(): this {
-    invariant(!this._preparedState, `Cannot mark a record with pending changes as deleted`)
+    invariant(!this._preparedState, `Cannot mark a record with pending changes as deleted: ` + this._raw.id + ", TableName: " + this.constructor.table +", this._preparedState: " + this._preparedState)
     this._raw._status = 'deleted'
     this._preparedState = 'markAsDeleted'
     return this
   }
 
   prepareDestroyPermanently(): this {
-    invariant(!this._preparedState, `Cannot destroy permanently a record with pending changes`)
+    invariant(!this._preparedState, `Cannot destroy permanently a record with pending changes: `  + this._raw.id + ", TableName: " + this.constructor.table +", this._preparedState: " + this._preparedState)
     this._raw._status = 'deleted'
     this._preparedState = 'destroyPermanently'
     return this
